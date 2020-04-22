@@ -10,10 +10,13 @@
 
 #define PIN_ENTER	      3 // INT1, lógica hecha con interrupciones
 #define PIN_PRESENCIA   2 // INT0, lógica hecha con interrupciones
-#define PIN_NIVEL	      4
+#define PIN_NIVEL	      6
 
 #define PIN_ASPERSOR    22
 #define PIN_ALARMA	    19
+
+#define PIN_ENCODER_A   4
+#define PIN_ENCODER_B   5
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definición de textos a mostrar en pantalla.
@@ -51,4 +54,6 @@
 // Constantes lógicas.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define BUEN_NIVEL LOW	// Cambiar a HIGH si la resistencia es de pull-up 
+#define BUEN_NIVEL LOW	// Cambiar a HIGH si la resistencia es de pull-up
+#define TIEMPO_MINIMO 5000
+#define TIEMPO_MAXIMO 20000

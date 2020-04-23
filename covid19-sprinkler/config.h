@@ -22,10 +22,10 @@
 // Definición de textos a mostrar en pantalla.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define SALUDO              "INICIANDO..."
+#define SALUDO              "SALUDOS DE"
 #define NOMBRE_FABRICANTE   "#LEYDER CONTROL#"
 #define NOMBRE_CLIENTE      "-#CLIENTE#-"
-#define ALARMA_NIVEL        "NIVEL BAJO!"
+#define ALARMA_NIVEL        "ALERTA DE NIVEL!"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Determinación de retardos internos para el correcto funcionamiento del
@@ -35,6 +35,7 @@
 #define GUARDA_RUIDO    200
 #define GUARDA_PROCESO  2000
 #define TIEMPO_ROCIO	  10000
+#define TIEMPO_SALUDO   2000
 
 ////////////////////////////////////////////////////////////////////////////////
 // Bibliotecas externas. Se recomienda no modificar.

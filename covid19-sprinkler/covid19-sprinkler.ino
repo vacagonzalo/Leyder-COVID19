@@ -7,8 +7,8 @@ bool alarma = false;
 int encoder_tabla[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
 
 void setup() {
-  attachInterrupt(digitalPinToInterrupt(PIN_ENTER, boton, FALLING);
-  attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA, rociar, RISING));
+  attachInterrupt(digitalPinToInterrupt(PIN_ENTER), boton, FALLING);
+  attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA), rociar, RISING);
   pinMode(PIN_ASPERSOR, OUTPUT);
   pinMode(PIN_NIVEL, INPUT);
   pinMode(PIN_ENCODER_A, INPUT);
@@ -41,12 +41,12 @@ void boton()
       primer_ingreso =! primer_ingreso;
       int a0 = digitalRead(PIN_ENCODER_A);
       int b0 = digitalRead(PIN_ENCODER_B);
-      detachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA);
+      detachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA));
       // Bloque atómico, lectura de encoder
       while(true)
       {
         int a1 = digitalRead(PIN_ENCODER_A);
-        int a2 = digitalRead(PIN_ENCODER_B);
+        int b1 = digitalRead(PIN_ENCODER_B);
         int index = a0 + (2*b0) + (4*a1) + (8*b1);
         int incremento = encoder_tabla[index];
         if( incremento < 0 && tiempo_rocio > TIEMPO_MINIMO )
@@ -61,12 +61,12 @@ void boton()
         b0 = b1;
       }
       // Fin de bloque atómico
-      attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA, rociar, RISING);
+      attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA), rociar, RISING);
     }
     else
     {
       primer_ingreso = true;
-      attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA, rociar, RISING);
+      attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA), rociar, RISING);
     }
   }
 }
@@ -79,7 +79,7 @@ void rociar()
   {
     if(!alarma)
     {
-      detachInterrupt(digitalPinToInterrupt(PIN_ENTER);
+      detachInterrupt(digitalPinToInterrupt(PIN_ENTER));
       // Este bloque es atómico (bloqueante) a propósito, no cambiar
       digitalWrite(PIN_ASPERSOR, HIGH);
       delay(tiempo_rocio);
@@ -87,7 +87,7 @@ void rociar()
       contador_rociadas++;
       delay(GUARDA_PROCESO);
       // Fin del bloque atómico
-      attachInterrupt(digitalPinToInterrupt(PIN_ENTER, boton, FALLING);
+      attachInterrupt(digitalPinToInterrupt(PIN_ENTER), boton, FALLING);
     } 
   }
 }

@@ -26,6 +26,7 @@
 #define NOMBRE_FABRICANTE   "#LEYDER CONTROL#"
 #define NOMBRE_CLIENTE      "-#CLIENTE#-"
 #define ALARMA_NIVEL        "ALERTA DE NIVEL!"
+#define CONFIGURACION       "CONFIGURACION"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Determinación de retardos internos para el correcto funcionamiento del

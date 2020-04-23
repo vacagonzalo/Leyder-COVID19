@@ -5,7 +5,7 @@ int contador_rociadas = 0;
 bool primer_ingreso = true;
 bool alarma = false;
 int encoder_tabla[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
-char segunda_linea[16] = "****************";
+char segunda_linea[17] = "0123456789ABCDEF";
 
 LiquidCrystal_I2C lcd(LCD_cADDR, LCD_cCHAR, LCD_CLINE);
 
@@ -70,6 +70,11 @@ void boton()
       int b0 = digitalRead(PIN_ENCODER_B);
       detachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA));
       // Bloque atómico, lectura de encoder
+      mensaje_configuracion();
+      lcd.clear();
+      lcd.print(CONFIGURACION);
+      lcd.setCursor(1,0);
+      lcd.print(segunda_linea);
       while(true)
       {
         int a1 = digitalRead(PIN_ENCODER_A);
@@ -84,6 +89,9 @@ void boton()
         {
           tiempo_rocio++;
         }
+        mensaje_configuracion();
+        lcd.setCursor(1,0);
+        lcd.print(segunda_linea);
         a0 = a1;
         b0 = b1;
       }
@@ -93,6 +101,11 @@ void boton()
     else
     {
       primer_ingreso = true;
+      mensaje_inicio();
+      lcd.clear();
+      lcd.print(NOMBRE_CLIENTE);
+      lcd.setCursor(1,0);
+      lcd.print(segunda_linea);
       attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA), rociar, RISING);
     }
   }
@@ -241,5 +254,59 @@ void mensaje_inicio()
     case 8: segunda_linea[15] = '8'; break;
     case 9: segunda_linea[15] = '9'; break;
     default: segunda_linea[15] = '?';
+  }
+}
+
+
+//CONFIGURACION
+//TIEMPO: 15 <- ejemplo de línea a lograr
+void mensaje_configuracion()
+{
+  int decenas = 0;
+  int unidades = 0;
+  segunda_linea[0] = 'T';
+  segunda_linea[1] = 'I';
+  segunda_linea[2] = 'E';
+  segunda_linea[3] = 'M';
+  segunda_linea[4] = 'P';
+  segunda_linea[5] = 'O';
+  segunda_linea[6] = ':';
+  segunda_linea[7] = ' ';
+  
+  decenas = tiempo_rocio / 10;
+  switch(decenas)
+  {
+    case 0: segunda_linea[8] = '0'; break;
+    case 1: segunda_linea[8] = '1'; break;
+    case 2: segunda_linea[8] = '2'; break;
+    case 3: segunda_linea[8] = '3'; break;
+    case 4: segunda_linea[8] = '4'; break;
+    case 5: segunda_linea[8] = '5'; break;
+    case 6: segunda_linea[8] = '6'; break;
+    case 7: segunda_linea[8] = '7'; break;
+    case 8: segunda_linea[8] = '8'; break;
+    case 9: segunda_linea[8] = '9'; break;
+    default: segunda_linea[8] = '?';
+  }
+
+  unidades = tiempo_rocio % 10;
+  switch(unidades)
+  {
+    case 0: segunda_linea[9] = '0'; break;
+    case 1: segunda_linea[9] = '1'; break;
+    case 2: segunda_linea[9] = '2'; break;
+    case 3: segunda_linea[9] = '3'; break;
+    case 4: segunda_linea[9] = '4'; break;
+    case 5: segunda_linea[9] = '5'; break;
+    case 6: segunda_linea[9] = '6'; break;
+    case 7: segunda_linea[9] = '7'; break;
+    case 8: segunda_linea[9] = '8'; break;
+    case 9: segunda_linea[9] = '9'; break;
+    default: segunda_linea[9] = '?';
+  }
+
+  for(int i = 10; i < 16; ++i)
+  {
+    segunda_linea[i] = ' ';
   }
 }

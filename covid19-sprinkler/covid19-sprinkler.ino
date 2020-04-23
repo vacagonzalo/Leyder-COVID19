@@ -6,6 +6,8 @@ bool primer_ingreso = true;
 bool alarma = false;
 int encoder_tabla[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
 
+LiquidCrystal_I2C lcd(LCD_cADDR, LCD_cCHAR, LCD_CLINE);
+
 void setup() {
   attachInterrupt(digitalPinToInterrupt(PIN_ENTER), boton, FALLING);
   attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA), rociar, RISING);
@@ -13,7 +15,6 @@ void setup() {
   pinMode(PIN_NIVEL, INPUT);
   pinMode(PIN_ENCODER_A, INPUT);
   pinMode(PIN_ENCODER_B, INPUT);
-
 }
 
 void loop() {

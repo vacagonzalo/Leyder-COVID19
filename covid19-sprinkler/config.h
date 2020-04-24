@@ -10,10 +10,10 @@
 
 #define PIN_ENTER	      3 // INT1, lógica hecha con interrupciones
 #define PIN_PRESENCIA   2 // INT0, lógica hecha con interrupciones
-#define PIN_NIVEL	      6
+#define PIN_NIVEL	      6 // Pin del sensor de nivel
 
-#define PIN_ASPERSOR    22
-#define PIN_ALARMA	    19
+#define PIN_ASPERSOR    22 // Pin que activa el aspersor
+#define PIN_ALARMA	    19 // Pin que activa la alarma
 
 #define PIN_ENCODER_A   4
 #define PIN_ENCODER_B   5

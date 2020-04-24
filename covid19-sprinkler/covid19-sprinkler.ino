@@ -42,7 +42,7 @@ void loop() {
       mensaje_inicio();
       lcd.clear();
       lcd.print(NOMBRE_CLIENTE);
-      lcd.setCursor(1,0);
+      lcd.setCursor(0,1);
       lcd.print(segunda_linea);
       alarma = false;
     }
@@ -73,7 +73,7 @@ void boton()
       mensaje_configuracion();
       lcd.clear();
       lcd.print(CONFIGURACION);
-      lcd.setCursor(1,0);
+      lcd.setCursor(0,1);
       lcd.print(segunda_linea);
       while(true)
       {
@@ -90,7 +90,7 @@ void boton()
           tiempo_rocio++;
         }
         mensaje_configuracion();
-        lcd.setCursor(1,0);
+        lcd.setCursor(0,1);
         lcd.print(segunda_linea);
         a0 = a1;
         b0 = b1;
@@ -104,7 +104,7 @@ void boton()
       mensaje_inicio();
       lcd.clear();
       lcd.print(NOMBRE_CLIENTE);
-      lcd.setCursor(1,0);
+      lcd.setCursor(0,1);
       lcd.print(segunda_linea);
       attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA), rociar, RISING);
     }
@@ -127,7 +127,7 @@ void rociar()
       contador_rociadas++;
 
       mensaje_inicio();
-      lcd.setCursor(1,0);
+      lcd.setCursor(0,1);
       lcd.print(segunda_linea);
       
       delay(GUARDA_PROCESO);

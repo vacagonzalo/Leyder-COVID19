@@ -83,11 +83,11 @@ void boton()
         int incremento = encoder_tabla[index];
         if( incremento < 0 && tiempo_rocio > TIEMPO_MINIMO )
         {
-          tiempo_rocio--;
+          tiempo_rocio -= 1000;
         } 
         else if( incremento > 0 && tiempo_rocio < TIEMPO_MAXIMO)
         {
-          tiempo_rocio++;
+          tiempo_rocio += 1000;
         }
         mensaje_configuracion();
         lcd.setCursor(0,1);
@@ -145,6 +145,7 @@ void mensaje_inicio()
   int decenas = 0;
   int centenas = 0;
   int unidades_mil = 0;
+  int tiempo_rocio_segundos = tiempo_rocio / 10000;
   for(int i=0; i<16; ++i)
   {
     segunda_linea[i] = ' ';
@@ -152,7 +153,7 @@ void mensaje_inicio()
   segunda_linea[0] = 'T';
   segunda_linea[1] = ':';
   
-  decenas = tiempo_rocio / 10;
+  decenas = tiempo_rocio_segundos / 10;
   switch(decenas)
   {
     case 0: segunda_linea[2] = '0'; break;

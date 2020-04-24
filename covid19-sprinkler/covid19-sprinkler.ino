@@ -22,7 +22,7 @@ void setup() {
   mensaje_inicio();
   lcd.clear();
   lcd.print(NOMBRE_CLIENTE);
-  lcd.setCursor(1,0);
+  lcd.setCursor(0,1);
   lcd.print(segunda_linea);
   
   attachInterrupt(digitalPinToInterrupt(PIN_ENTER), boton, FALLING);

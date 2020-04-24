@@ -1,313 +1,312 @@
 #include "config.h"
 
+int estado_anterior = INICIO;
+int estado_actual = INICIO;
+
 int tiempo_rocio = TIEMPO_ROCIO;
 int contador_rociadas = 0;
-bool primer_ingreso = true;
-bool alarma = false;
-int encoder_tabla[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0};
-char segunda_linea[17] = "0123456789ABCDEF";
+
+int encoder_tabla[16] = {0, -1000, 1000, 0, 1000, 0, 0, -1000, -1000, 0, 0, 1000, 0, 1000, -1000, 0};
 
 LiquidCrystal_I2C lcd(LCD_cADDR, LCD_cCHAR, LCD_CLINE);
+char segunda_linea[17] = "0123456789ABCDEF";
 
-void setup() {
+
+void setup() 
+{
   lcd.init();
   lcd.backlight();
-  
-  lcd.setCursor(0,0);
-  lcd.print(SALUDO);
-  lcd.setCursor(0,1);
-  lcd.print(NOMBRE_FABRICANTE);
-  delay(TIEMPO_SALUDO);
-  
-  mensaje_inicio();
-  lcd.clear();
-  lcd.print(NOMBRE_CLIENTE);
-  lcd.setCursor(0,1);
-  lcd.print(segunda_linea);
-  
-  attachInterrupt(digitalPinToInterrupt(PIN_ENTER), boton, FALLING);
-  attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA), rociar, RISING);
-  pinMode(PIN_ASPERSOR, OUTPUT);
+
+  // sensores
+  pinMode(PIN_PRESENCIA, INPUT);
   pinMode(PIN_NIVEL, INPUT);
+
+  //encoder
+  pinMode(PIN_PULSADOR, INPUT);
   pinMode(PIN_ENCODER_A, INPUT);
   pinMode(PIN_ENCODER_B, INPUT);
+
+  // actuadores
+  pinMode(PIN_ASPERSOR, OUTPUT);
+  pinMode(PIN_ALARMA, OUTPUT);
 }
 
-void loop() {
-  if(digitalRead(PIN_NIVEL) == BUEN_NIVEL)
-  {
-    if(alarma)
-    {
-      digitalWrite(PIN_ALARMA, LOW);
-      mensaje_inicio();
-      lcd.clear();
-      lcd.print(NOMBRE_CLIENTE);
-      lcd.setCursor(0,1);
-      lcd.print(segunda_linea);
-      alarma = false;
-    }
-  }
-  else
-  {
-    digitalWrite(PIN_ALARMA, HIGH);
-    alarma = true;
-    lcd.setCursor(0,0);
-    lcd.print(ALARMA_NIVEL);
-  }
-
-}
-
-void boton() 
+void loop() 
 {
-  static unsigned long last_interrupt_time = 0;
-  unsigned long interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time > GUARDA_RUIDO)
+  switch (estado_actual)
   {
-    if(primer_ingreso)
+    case INICIO: inicio(); break;
+    case REPOSO: reposo(); break;
+    case ROCIAR: rociar(); break;
+    case CONFIGURAR: configurar(); break;
+    case ALARMAR: alarmar(); break;
+  }
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Funciones de estado
+////////////////////////////////////////////////////////////////////////////////
+
+void inicio()
+{
+  mensaje_inicio();
+  delay(TIEMPO_SALUDO);
+  estado_anterior = INICIO;
+  estado_actual = REPOSO;
+}
+
+void reposo()
+{
+  while(estado_actual == REPOSO)
+  {
+    if(estado_anterior != REPOSO)
     {
-      primer_ingreso =! primer_ingreso;
-      int a0 = digitalRead(PIN_ENCODER_A);
-      int b0 = digitalRead(PIN_ENCODER_B);
-      detachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA));
-      // Bloque atómico, lectura de encoder
-      mensaje_configuracion();
-      lcd.clear();
-      lcd.print(CONFIGURACION);
-      lcd.setCursor(0,1);
-      lcd.print(segunda_linea);
-      while(true)
-      {
-        int a1 = digitalRead(PIN_ENCODER_A);
-        int b1 = digitalRead(PIN_ENCODER_B);
-        int index = a0 + (2*b0) + (4*a1) + (8*b1);
-        int incremento = encoder_tabla[index];
-        if( incremento < 0 && tiempo_rocio > TIEMPO_MINIMO )
-        {
-          tiempo_rocio -= 1000;
-        } 
-        else if( incremento > 0 && tiempo_rocio < TIEMPO_MAXIMO)
-        {
-          tiempo_rocio += 1000;
-        }
-        mensaje_configuracion();
-        lcd.setCursor(0,1);
-        lcd.print(segunda_linea);
-        a0 = a1;
-        b0 = b1;
-      }
-      // Fin de bloque atómico
-      attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA), rociar, RISING);
+      mensaje_reposo();
+      estado_anterior = REPOSO;
     }
-    else
+    
+    // Prioridad baja 
+    if(digitalRead(PIN_PULSADOR) == PULSADO)
     {
-      primer_ingreso = true;
-      mensaje_inicio();
-      lcd.clear();
-      lcd.print(NOMBRE_CLIENTE);
-      lcd.setCursor(0,1);
-      lcd.print(segunda_linea);
-      attachInterrupt(digitalPinToInterrupt(PIN_PRESENCIA), rociar, RISING);
+      delay(GUARDA_RUIDO);
+      if(digitalRead(PIN_PULSADOR) == PULSADO)
+      {
+        estado_actual = CONFIGURAR;
+      }
+    }
+
+    // Prioriad media
+    if(digitalRead(PIN_PRESENCIA) == PRESENCIA)
+    {
+      delay(GUARDA_RUIDO);
+      if(digitalRead(PIN_PRESENCIA) == PRESENCIA)
+      {
+        estado_actual = ROCIAR;
+      }
+    }
+
+    //prioridad alta
+    if(digitalRead(PIN_NIVEL) == MAL_NIVEL)
+    {
+      delay(GUARDA_RUIDO);
+      if(digitalRead(PIN_NIVEL) == MAL_NIVEL)
+      {
+        estado_actual = ALARMAR;
+      }
     }
   }
 }
 
 void rociar()
-{  
-  static unsigned long last_interrupt_time = 0;
-  unsigned long interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time > GUARDA_RUIDO)
+{
+  digitalWrite(PIN_ASPERSOR, HIGH);
+  delay(tiempo_rocio);
+  digitalWrite(PIN_ASPERSOR, LOW);
+  estado_anterior = ROCIAR;
+  estado_actual = REPOSO;
+  contador_rociadas++;
+  bool esta_despejado = false;
+  while(!esta_despejado)
   {
-    if(!alarma)
+    delay(GUARDA_PROCESO);
+    if(digitalRead(PIN_PRESENCIA != PRESENCIA))
     {
-      detachInterrupt(digitalPinToInterrupt(PIN_ENTER));
-      // Este bloque es atómico (bloqueante) a propósito, no cambiar
-      digitalWrite(PIN_ASPERSOR, HIGH);
-      delay(tiempo_rocio);
-      digitalWrite(PIN_ASPERSOR, LOW);
-      contador_rociadas++;
-
-      mensaje_inicio();
-      lcd.setCursor(0,1);
-      lcd.print(segunda_linea);
-      
-      delay(GUARDA_PROCESO);
-      // Fin del bloque atómico
-      attachInterrupt(digitalPinToInterrupt(PIN_ENTER), boton, FALLING);
-    } 
+      esta_despejado = true;
+    }
   }
 }
 
-// 0123456789ABCDEF
-// T:15 ROCIOS:0043 <- ejemplo de línea a lograr
+void configurar()
+{
+  bool rote_encoder = false;
+  
+  int a = digitalRead(PIN_ENCODER_A);
+  int b = digitalRead(PIN_ENCODER_B);
+  int a_viejo = a;
+  int b_viejo = b;
+  int indice = 10 * a + 5 * b;
+
+  delay(GUARDA_RUIDO);
+  
+  while(estado_actual == CONFIGURAR)
+  {
+    if(estado_anterior != CONFIGURAR)
+    {
+      mensaje_configurar();
+      estado_anterior = CONFIGURAR;
+    }
+    if(rote_encoder)
+    {
+      mensaje_configurar();
+      rote_encoder = false;
+    }
+    
+    if(digitalRead(PIN_PULSADOR == PULSADO))
+    {
+      delay(GUARDA_RUIDO);
+      if(digitalRead(PIN_PULSADOR == PULSADO))
+      {
+        estado_actual = REPOSO;
+      }
+    }
+    else 
+    {
+      a = digitalRead(PIN_ENCODER_A);
+      b = digitalRead(PIN_ENCODER_B);
+      if((a != a_viejo) || (b != b_viejo))
+      {
+        rote_encoder = true;
+        indice = a_viejo * 8 + b_viejo * 4 + a * 2 + b;
+        a_viejo = a;
+        b_viejo = b;
+        int t_indice = tiempo_rocio + encoder_tabla[indice];
+        if(t_indice <= TIEMPO_MAXIMO && t_indice >= TIEMPO_MINIMO)
+        {
+          tiempo_rocio = t_indice; 
+        }
+      }
+    }
+  }
+}
+
+void alarmar()
+{
+  while(estado_actual == ALARMAR)
+  {
+    if(estado_anterior != ALARMAR)
+    {
+      mensaje_alarma();
+      digitalWrite(PIN_ALARMA, HIGH);
+      estado_anterior = ALARMAR;
+    }
+    if(digitalRead(PIN_NIVEL) != MAL_NIVEL)
+    {
+      delay(GUARDA_PROCESO);
+      if(digitalRead(PIN_NIVEL) != MAL_NIVEL)
+      {
+        estado_actual = REPOSO;
+        digitalWrite(PIN_ALARMA, LOW);
+      }
+    }
+  }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Funciones auxiliares a los estados
+////////////////////////////////////////////////////////////////////////////////
+
 void mensaje_inicio()
 {
-  int unidades = 0;
-  int decenas = 0;
-  int centenas = 0;
-  int unidades_mil = 0;
-  int tiempo_rocio_segundos = tiempo_rocio / 10000;
-  for(int i=0; i<16; ++i)
-  {
-    segunda_linea[i] = ' ';
-  }
-  segunda_linea[0] = 'T';
-  segunda_linea[1] = ':';
-  
-  decenas = tiempo_rocio_segundos / 10;
-  switch(decenas)
-  {
-    case 0: segunda_linea[2] = '0'; break;
-    case 1: segunda_linea[2] = '1'; break;
-    case 2: segunda_linea[2] = '2'; break;
-    case 3: segunda_linea[2] = '3'; break;
-    case 4: segunda_linea[2] = '4'; break;
-    case 5: segunda_linea[2] = '5'; break;
-    case 6: segunda_linea[2] = '6'; break;
-    case 7: segunda_linea[2] = '7'; break;
-    case 8: segunda_linea[2] = '8'; break;
-    case 9: segunda_linea[2] = '9'; break;
-    default: segunda_linea[2] = '?';
-  }
-  
-  unidades = tiempo_rocio % 10;
-  switch(unidades)
-  {
-    case 0: segunda_linea[3] = '0'; break;
-    case 1: segunda_linea[3] = '1'; break;
-    case 2: segunda_linea[3] = '2'; break;
-    case 3: segunda_linea[3] = '3'; break;
-    case 4: segunda_linea[3] = '4'; break;
-    case 5: segunda_linea[3] = '5'; break;
-    case 6: segunda_linea[3] = '6'; break;
-    case 7: segunda_linea[3] = '7'; break;
-    case 8: segunda_linea[3] = '8'; break;
-    case 9: segunda_linea[3] = '9'; break;
-    default: segunda_linea[3] = '?';
-  }
-  
-  segunda_linea[5] = 'R';
-  segunda_linea[6] = 'O';
-  segunda_linea[7] = 'C';
-  segunda_linea[8] = 'I';
-  segunda_linea[9] = 'O';
-  segunda_linea[10] = 'S';
-  segunda_linea[11] = ':';
-  
-  unidades_mil = contador_rociadas / 1000;
-  switch(unidades_mil)
-  {
-    case 0: segunda_linea[12] = '0'; break;
-    case 1: segunda_linea[12] = '1'; break;
-    case 2: segunda_linea[12] = '2'; break;
-    case 3: segunda_linea[12] = '3'; break;
-    case 4: segunda_linea[12] = '4'; break;
-    case 5: segunda_linea[12] = '5'; break;
-    case 6: segunda_linea[12] = '6'; break;
-    case 7: segunda_linea[12] = '7'; break;
-    case 8: segunda_linea[12] = '8'; break;
-    case 9: segunda_linea[12] = '9'; break;
-    default: segunda_linea[12] = '?';
-  }
-
-  centenas = (contador_rociadas % 1000) / 100;
-  switch(centenas)
-  {
-    case 0: segunda_linea[13] = '0'; break;
-    case 1: segunda_linea[13] = '1'; break;
-    case 2: segunda_linea[13] = '2'; break;
-    case 3: segunda_linea[13] = '3'; break;
-    case 4: segunda_linea[13] = '4'; break;
-    case 5: segunda_linea[13] = '5'; break;
-    case 6: segunda_linea[13] = '6'; break;
-    case 7: segunda_linea[13] = '7'; break;
-    case 8: segunda_linea[13] = '8'; break;
-    case 9: segunda_linea[13] = '9'; break;
-    default: segunda_linea[13] = '?';
-  }
-
-  decenas = (contador_rociadas % 100) / 10;
-  switch(decenas)
-  {
-    case 0: segunda_linea[14] = '0'; break;
-    case 1: segunda_linea[14] = '1'; break;
-    case 2: segunda_linea[14] = '2'; break;
-    case 3: segunda_linea[14] = '3'; break;
-    case 4: segunda_linea[14] = '4'; break;
-    case 5: segunda_linea[14] = '5'; break;
-    case 6: segunda_linea[14] = '6'; break;
-    case 7: segunda_linea[14] = '7'; break;
-    case 8: segunda_linea[14] = '8'; break;
-    case 9: segunda_linea[14] = '9'; break;
-    default: segunda_linea[14] = '?';
-  }
-
-  unidades = contador_rociadas % 10;
-  switch(unidades)
-  {
-    case 0: segunda_linea[15] = '0'; break;
-    case 1: segunda_linea[15] = '1'; break;
-    case 2: segunda_linea[15] = '2'; break;
-    case 3: segunda_linea[15] = '3'; break;
-    case 4: segunda_linea[15] = '4'; break;
-    case 5: segunda_linea[15] = '5'; break;
-    case 6: segunda_linea[15] = '6'; break;
-    case 7: segunda_linea[15] = '7'; break;
-    case 8: segunda_linea[15] = '8'; break;
-    case 9: segunda_linea[15] = '9'; break;
-    default: segunda_linea[15] = '?';
-  }
+  lcd.setCursor(0,0);
+  lcd.print(SALUDO);
+  lcd.setCursor(0,1);
+  lcd.print(NOMBRE_FABRICANTE);
 }
 
-
-//CONFIGURACION
-//TIEMPO: 15 <- ejemplo de línea a lograr
-void mensaje_configuracion()
+void mensaje_reposo()
 {
-  int decenas = 0;
-  int unidades = 0;
-  segunda_linea[0] = 'T';
-  segunda_linea[1] = 'I';
-  segunda_linea[2] = 'E';
-  segunda_linea[3] = 'M';
-  segunda_linea[4] = 'P';
-  segunda_linea[5] = 'O';
-  segunda_linea[6] = ':';
-  segunda_linea[7] = ' ';
-  
-  decenas = tiempo_rocio / 10;
-  switch(decenas)
-  {
-    case 0: segunda_linea[8] = '0'; break;
-    case 1: segunda_linea[8] = '1'; break;
-    case 2: segunda_linea[8] = '2'; break;
-    case 3: segunda_linea[8] = '3'; break;
-    case 4: segunda_linea[8] = '4'; break;
-    case 5: segunda_linea[8] = '5'; break;
-    case 6: segunda_linea[8] = '6'; break;
-    case 7: segunda_linea[8] = '7'; break;
-    case 8: segunda_linea[8] = '8'; break;
-    case 9: segunda_linea[8] = '9'; break;
-    default: segunda_linea[8] = '?';
-  }
+  linea_reposo();
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print(NOMBRE_CLIENTE);
+  lcd.setCursor(0,1);
+  lcd.print(segunda_linea);
+}
 
-  unidades = tiempo_rocio % 10;
-  switch(unidades)
-  {
-    case 0: segunda_linea[9] = '0'; break;
-    case 1: segunda_linea[9] = '1'; break;
-    case 2: segunda_linea[9] = '2'; break;
-    case 3: segunda_linea[9] = '3'; break;
-    case 4: segunda_linea[9] = '4'; break;
-    case 5: segunda_linea[9] = '5'; break;
-    case 6: segunda_linea[9] = '6'; break;
-    case 7: segunda_linea[9] = '7'; break;
-    case 8: segunda_linea[9] = '8'; break;
-    case 9: segunda_linea[9] = '9'; break;
-    default: segunda_linea[9] = '?';
-  }
+void mensaje_configurar()
+{
+  linea_configurar();
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print(CONFIGURACION);
+  lcd.setCursor(0,1);
+  lcd.print(segunda_linea);
+}
 
-  for(int i = 10; i < 16; ++i)
+void mensaje_alarma()
+{
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print(ALARMA_NIVEL);
+  lcd.setCursor(0,1);
+  lcd.print(ALARMA_NIVEL);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Funciones auxiliares a las funciones de mensajes
+////////////////////////////////////////////////////////////////////////////////
+
+// T:15 ROCIOS:0043 <- ejemplo de línea a lograr
+void linea_reposo()
+{
+  int rocio_segundos = tiempo_rocio / 1000;
+  int rs_decenas = rocio_segundos / 10;
+  int rs_unidades = rocio_segundos % 10;
+
+  int cr_miles = contador_rociadas / 1000;
+  int cr_centenas = (contador_rociadas % 1000) / 100;
+  int cr_decenas = (contador_rociadas % 100) / 10;
+  int cr_unidades = contador_rociadas %10;
+
+  segunda_linea[0]  = 'T';
+  segunda_linea[1]  = ':';
+  segunda_linea[2]  = get_caracter(rs_decenas);
+  segunda_linea[3]  = get_caracter(rs_unidades);
+  segunda_linea[4]  = ' ';
+  segunda_linea[5]  = 'R';
+  segunda_linea[6]  = 'O';
+  segunda_linea[7]  = 'C';
+  segunda_linea[8]  = 'I';
+  segunda_linea[9]  = 'O';
+  segunda_linea[10] = 'S';
+  segunda_linea[11] = ':';
+  segunda_linea[12] = get_caracter(cr_miles);
+  segunda_linea[13] = get_caracter(cr_centenas);
+  segunda_linea[14] = get_caracter(cr_decenas);
+  segunda_linea[15] = get_caracter(cr_unidades);
+}
+// TIEMPO DE ROC:15 <- ejemplo de línea a lograr
+void linea_configurar()
+{
+  int rocio_segundos = tiempo_rocio / 1000;
+  int rs_decenas = rocio_segundos / 10;
+  int rs_unidades = rocio_segundos % 10;
+
+  segunda_linea[0]  = 'T';
+  segunda_linea[1]  = 'I';
+  segunda_linea[2]  = 'E';
+  segunda_linea[3]  = 'M';
+  segunda_linea[4]  = 'P';
+  segunda_linea[5]  = 'O';
+  segunda_linea[6]  = ' ';
+  segunda_linea[7]  = 'D';
+  segunda_linea[8]  = 'E';
+  segunda_linea[9]  = ' ';
+  segunda_linea[10] = 'R';
+  segunda_linea[11] = 'O';
+  segunda_linea[12] = 'C';
+  segunda_linea[13] = ':';
+  segunda_linea[14] = get_caracter(rs_decenas);
+  segunda_linea[15] = get_caracter(rs_unidades);
+}
+
+char get_caracter(int digito)
+{
+  char resultado;
+    switch(digito)
   {
-    segunda_linea[i] = ' ';
+    case 0: resultado = '0'; break;
+    case 1: resultado = '1'; break;
+    case 2: resultado = '2'; break;
+    case 3: resultado = '3'; break;
+    case 4: resultado = '4'; break;
+    case 5: resultado = '5'; break;
+    case 6: resultado = '6'; break;
+    case 7: resultado = '7'; break;
+    case 8: resultado = '8'; break;
+    case 9: resultado = '9'; break;
+    default: resultado = '?';
   }
+  return resultado;
 }

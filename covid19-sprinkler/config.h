@@ -3,20 +3,27 @@
 // El display solo puede ir conectado en los pines SDA y SCL
 // SDA -> A4 (PIN 27)
 // SCL -> A5 (PIN 28)
-// El sensor de presencia y el boton del encoder solo pueden ir en los pines
-// 2 y 3 de la placa arduino nano, son los únicos que pueden generar
-// interrupciones externas.
 ////////////////////////////////////////////////////////////////////////////////
-
-#define PIN_ENTER	      3 // INT1, lógica hecha con interrupciones
-#define PIN_PRESENCIA   2 // INT0, lógica hecha con interrupciones
-#define PIN_NIVEL	      6 // Pin del sensor de nivel
-
-#define PIN_ASPERSOR    22 // Pin que activa el aspersor
-#define PIN_ALARMA	    19 // Pin que activa la alarma
-
+// sensores
+#define PIN_PRESENCIA   2 
+#define PIN_NIVEL	      6 
+// encoder
+#define PIN_PULSADOR    3
 #define PIN_ENCODER_A   4
 #define PIN_ENCODER_B   5
+// actuadores
+#define PIN_ASPERSOR    22
+#define PIN_ALARMA	    19
+
+////////////////////////////////////////////////////////////////////////////////
+// Máquina de estados
+///////////////////////////////////////////////////////////////////////////////
+
+#define INICIO  0
+#define REPOSO  1
+#define ROCIAR  2
+#define CONFIGURAR  3
+#define ALARMAR 4
 
 ////////////////////////////////////////////////////////////////////////////////
 // Definición de textos a mostrar en pantalla.
@@ -55,7 +62,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Constantes lógicas.
 ////////////////////////////////////////////////////////////////////////////////
-
-#define BUEN_NIVEL LOW	// Cambiar a HIGH si la resistencia es de pull-up
+#define PRESENCIA HIGH
+#define PULSADO HIGH
+#define MAL_NIVEL LOW
 #define TIEMPO_MINIMO 5000
 #define TIEMPO_MAXIMO 20000

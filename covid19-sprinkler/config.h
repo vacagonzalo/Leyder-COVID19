@@ -1,4 +1,12 @@
 ////////////////////////////////////////////////////////////////////////////////
+// Control del modo debug
+// Si se habilita, se reportará al monitor serie el estado del programa
+// y el ingreso a las distintas funciones
+////////////////////////////////////////////////////////////////////////////////
+
+#define DEBUG_MODE  1 // 0 para modo normal, 1 para modo debugger
+
+////////////////////////////////////////////////////////////////////////////////
 // Determinación de las conexiones a la placa Arduino Nano.
 // El display solo puede ir conectado en los pines SDA y SCL
 // SDA -> A4 (PIN 27)
@@ -7,7 +15,7 @@
 
 // sensores
 #define PIN_PRESENCIA   2 
-#define PIN_NIVEL	6 
+#define PIN_NIVEL       6 
 
 // encoder
 #define PIN_PULSADOR    3

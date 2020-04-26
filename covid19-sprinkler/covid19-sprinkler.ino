@@ -1,5 +1,9 @@
 #include "config.h"
 
+#ifdef DEBUG_MODE
+  #include <Wire.h>
+#endif
+
 int estado_anterior = INICIO;
 int estado_actual = INICIO;
 
@@ -14,6 +18,9 @@ char segunda_linea[17] = "0123456789ABCDEF";
 
 void setup() 
 {
+  #ifdef DEBUG_MODE
+    Serial.begin(9600);
+  #endif
   lcd.init();
   lcd.backlight();
 
@@ -33,6 +40,9 @@ void setup()
 
 void loop() 
 {
+  #ifdef DEBUG_MODE
+    Serial.print("loop principal\n");
+  #endif
   switch (estado_actual)
   {
     case INICIO: inicio(); break;
@@ -50,6 +60,9 @@ void loop()
 
 void inicio()
 {
+  #ifdef DEBUG_MODE
+    Serial.print("ingreso a funcion de estado INICIO\n");
+  #endif
   mensaje_inicio();
   delay(TIEMPO_SALUDO);
   estado_anterior = INICIO;
@@ -58,10 +71,17 @@ void inicio()
 
 void reposo()
 {
+  #ifdef DEBUG_MODE
+    Serial.print("ingreso a funcion de estado REPOSO\n");
+  #endif
   while(estado_actual == REPOSO)
   {
     if(estado_anterior != REPOSO)
     {
+      #ifdef DEBUG_MODE
+        Serial.print("se detecta que el estado anterior no era REPOSO\n");
+        Serial.print("se procede a actualizar el display\n");
+      #endif
       mensaje_reposo();
       estado_anterior = REPOSO;
     }
@@ -69,9 +89,15 @@ void reposo()
     // Prioridad baja 
     if(digitalRead(PIN_PULSADOR) == PULSADO)
     {
+      #ifdef DEBUG_MODE
+        Serial.print("Se detecta el boton del encoder\n");
+      #endif
       delay(GUARDA_RUIDO);
       if(digitalRead(PIN_PULSADOR) == PULSADO)
       {
+        #ifdef DEBUG_MODE
+          Serial.print("Se verifica que el boton del encoder no fue accionado por ruido\n");
+        #endif
         estado_actual = CONFIGURAR;
       }
     }
@@ -79,9 +105,15 @@ void reposo()
     // Prioriad media
     if(digitalRead(PIN_PRESENCIA) == PRESENCIA)
     {
+      #ifdef DEBUG_MODE
+          Serial.print("Se detecta presencia en la cabina\n");
+      #endif
       delay(GUARDA_RUIDO);
       if(digitalRead(PIN_PRESENCIA) == PRESENCIA)
       {
+        #ifdef DEBUG_MODE
+          Serial.print("Se verifica que la presencia no es ruido\n");
+        #endif
         estado_actual = ROCIAR;
       }
     }
@@ -89,9 +121,15 @@ void reposo()
     //prioridad alta
     if(digitalRead(PIN_NIVEL) == MAL_NIVEL)
     {
+      #ifdef DEBUG_MODE
+          Serial.print("Se detecta bajo nivel\n");
+      #endif
       delay(GUARDA_RUIDO);
       if(digitalRead(PIN_NIVEL) == MAL_NIVEL)
       {
+        #ifdef DEBUG_MODE
+          Serial.print("El bajo nivel es real, no es ruido\n");
+        #endif
         estado_actual = ALARMAR;
       }
     }
@@ -100,18 +138,30 @@ void reposo()
 
 void rociar()
 {
+  #ifdef DEBUG_MODE
+      Serial.print("Se ingresa en la funcion del estado ROCIAR\n");
+  #endif
   digitalWrite(PIN_ASPERSOR, ROCIANDO);
   delay(tiempo_rocio);
   digitalWrite(PIN_ASPERSOR, NO_ROCIANDO);
   estado_anterior = ROCIAR;
   estado_actual = REPOSO;
   contador_rociadas++;
+  #ifdef DEBUG_MODE
+      Serial.print("Se finaliza la rutina de rociado\n");
+  #endif
   bool esta_despejado = false;
   while(!esta_despejado)
   {
+    #ifdef DEBUG_MODE
+      Serial.print("Esperando que se vacie la cabina\n");
+    #endif
     delay(GUARDA_PROCESO);
     if(digitalRead(PIN_PRESENCIA != PRESENCIA))
     {
+      #ifdef DEBUG_MODE
+        Serial.print("La cabina está vacia\n");
+      #endif
       esta_despejado = true;
     }
   }
@@ -119,6 +169,9 @@ void rociar()
 
 void configurar()
 {
+  #ifdef DEBUG_MODE
+    Serial.print("Se ingresa a la funcion del estado CONFIGURAR\n");
+  #endif
   bool rote_encoder = false;
   
   int a = digitalRead(PIN_ENCODER_A);
@@ -133,29 +186,47 @@ void configurar()
   {
     if(estado_anterior != CONFIGURAR)
     {
+      #ifdef DEBUG_MODE
+        Serial.print("El estado anterior no era ROCIAR, se procede a actualizar el display\n");
+      #endif
       mensaje_configurar();
       estado_anterior = CONFIGURAR;
     }
     if(rote_encoder)
     {
+      #ifdef DEBUG_MODE
+        Serial.print("Como el encoder fue rotado, se procede a actualizar el display\n");
+      #endif
       mensaje_configurar();
       rote_encoder = false;
     }
     
     if(digitalRead(PIN_PULSADOR == PULSADO))
     {
+      #ifdef DEBUG_MODE
+        Serial.print("Se detecta un pulso en el boton del encoder\n");
+      #endif
       delay(GUARDA_RUIDO);
       if(digitalRead(PIN_PULSADOR == PULSADO))
       {
+        #ifdef DEBUG_MODE
+          Serial.print("Se verifica que el boton no fue accionado por ruido\n");
+        #endif
         estado_actual = REPOSO;
       }
     }
     else 
     {
+      #ifdef DEBUG_MODE
+        Serial.print("Se procede a verificar la posición del encoder\n");
+      #endif
       a = digitalRead(PIN_ENCODER_A);
       b = digitalRead(PIN_ENCODER_B);
       if((a != a_viejo) || (b != b_viejo))
       {
+        #ifdef DEBUG_MODE
+          Serial.print("Se detecta que el encoder fue rotado\n");
+        #endif
         rote_encoder = true;
         indice = a_viejo * 8 + b_viejo * 4 + a * 2 + b;
         a_viejo = a;
@@ -163,6 +234,9 @@ void configurar()
         int t_indice = tiempo_rocio + encoder_tabla[indice];
         if(t_indice <= TIEMPO_MAXIMO && t_indice >= TIEMPO_MINIMO)
         {
+          #ifdef DEBUG_MODE
+            Serial.print("Se verifica que el valor no está fuera de los valores limites\n");
+          #endif
           tiempo_rocio = t_indice; 
         }
       }
@@ -172,19 +246,34 @@ void configurar()
 
 void alarmar()
 {
+  #ifdef DEBUG_MODE
+    Serial.print("Se ingresa a la funcion del estado ALARMAR\n");
+  #endif
   while(estado_actual == ALARMAR)
   {
+    #ifdef DEBUG_MODE
+      Serial.print("Verico si el nivel volvió a la normalidad\n");
+    #endif
     if(estado_anterior != ALARMAR)
     {
+      #ifdef DEBUG_MODE
+        Serial.print("Se detecta que el estado anterior no era ALARMAR y se procese a activar el rele\n");
+      #endif
       mensaje_alarma();
       digitalWrite(PIN_ALARMA, SUENA_ALARMA);
       estado_anterior = ALARMAR;
     }
     if(digitalRead(PIN_NIVEL) != MAL_NIVEL)
     {
+      #ifdef DEBUG_MODE
+        Serial.print("Se detecta una normalización del nivel\n");
+      #endif
       delay(GUARDA_PROCESO);
       if(digitalRead(PIN_NIVEL) != MAL_NIVEL)
       {
+        #ifdef DEBUG_MODE
+          Serial.print("La normalizacion del nivel es real\n");
+        #endif
         estado_actual = REPOSO;
         digitalWrite(PIN_ALARMA, NO_SUENA_ALARMA);
       }

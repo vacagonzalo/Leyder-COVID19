@@ -6,11 +6,11 @@ int estado_actual = INICIO;
 int tiempo_rocio = TIEMPO_ROCIO;
 int contador_rociadas = 0;
 
-int encoder_tabla[16] = {0, -1000, 1000, 0, 1000, 0, 0, -1000, -1000, 0, 0, 1000, 0, 1000, -1000, 0};
+int encoder_tabla[16] = {0, -1000, 1000, 0, 1000, 0, 0, -1000, -1000, 0, 0, 1000
+			, 0, 1000, -1000, 0};
 
 LiquidCrystal_I2C lcd(LCD_cADDR, LCD_cCHAR, LCD_CLINE);
 char segunda_linea[17] = "0123456789ABCDEF";
-
 
 void setup() 
 {
@@ -41,7 +41,7 @@ void loop()
     case CONFIGURAR: configurar(); break;
     case ALARMAR: alarmar(); break;
   }
-
+  delay(GUARDA_RUIDO);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -100,9 +100,9 @@ void reposo()
 
 void rociar()
 {
-  digitalWrite(PIN_ASPERSOR, HIGH);
+  digitalWrite(PIN_ASPERSOR, ROCIANDO);
   delay(tiempo_rocio);
-  digitalWrite(PIN_ASPERSOR, LOW);
+  digitalWrite(PIN_ASPERSOR, NO_ROCIANDO);
   estado_anterior = ROCIAR;
   estado_actual = REPOSO;
   contador_rociadas++;
@@ -177,7 +177,7 @@ void alarmar()
     if(estado_anterior != ALARMAR)
     {
       mensaje_alarma();
-      digitalWrite(PIN_ALARMA, HIGH);
+      digitalWrite(PIN_ALARMA, SUENA_ALARMA);
       estado_anterior = ALARMAR;
     }
     if(digitalRead(PIN_NIVEL) != MAL_NIVEL)
@@ -186,7 +186,7 @@ void alarmar()
       if(digitalRead(PIN_NIVEL) != MAL_NIVEL)
       {
         estado_actual = REPOSO;
-        digitalWrite(PIN_ALARMA, LOW);
+        digitalWrite(PIN_ALARMA, NO_SUENA_ALARMA);
       }
     }
   }
@@ -266,6 +266,7 @@ void linea_reposo()
   segunda_linea[14] = get_caracter(cr_decenas);
   segunda_linea[15] = get_caracter(cr_unidades);
 }
+
 // TIEMPO DE ROC:15 <- ejemplo de línea a lograr
 void linea_configurar()
 {

@@ -162,6 +162,9 @@ void configurar()
   #ifdef DEBUG_MODE
     Serial.print("Se ingresa a la funcion del estado CONFIGURAR\n");
   #endif
+
+  while(digitalRead(PIN_PULSADOR) == PULSADO); // espero a que suelte el botón
+  
   bool rote_encoder = false;
   
   int a = digitalRead(PIN_ENCODER_A);
@@ -229,6 +232,7 @@ void configurar()
       }
     }
   }
+  while(digitalRead(PIN_PULSADOR) == PULSADO);
 }
 
 void alarmar()

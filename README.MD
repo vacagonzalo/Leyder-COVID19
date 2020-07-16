@@ -1,5 +1,5 @@
 # Sistema de rocio COVID-19
-Propiedad intelectual de Leyder Martinez Amador (leyjo8222@gmail.com).
+
 ## Materiales
 * Placa arduino nano
 * LCD 2x16 I2C
